@@ -1,0 +1,291 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Joël Porquet" />
+  <title>ECS 150: Project #3 - User-level thread library (part 2)</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link href="data:text/css;charset=utf-8,%2Ehll%20%7B%20background%2Dcolor%3A%20%23ffffcc%20%7D%0A%2Ec%20%7B%20color%3A%20%23408080%3B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Eerr%20%7B%20border%3A%201px%20solid%20%23FF0000%20%7D%20%0A%2Ek%20%7B%20color%3A%20%23008000%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Eo%20%7B%20color%3A%20%23666666%20%7D%20%0A%2Ech%20%7B%20color%3A%20%23408080%3B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Ecm%20%7B%20color%3A%20%23408080%3B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Ecp%20%7B%20color%3A%20%23BC7A00%20%7D%20%0A%2Ecpf%20%7B%20color%3A%20%23408080%3B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Ec1%20%7B%20color%3A%20%23408080%3B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Ecs%20%7B%20color%3A%20%23408080%3B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Egd%20%7B%20color%3A%20%23A00000%20%7D%20%0A%2Ege%20%7B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Egr%20%7B%20color%3A%20%23FF0000%20%7D%20%0A%2Egh%20%7B%20color%3A%20%23000080%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Egi%20%7B%20color%3A%20%2300A000%20%7D%20%0A%2Ego%20%7B%20color%3A%20%23888888%20%7D%20%0A%2Egp%20%7B%20color%3A%20%23000080%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Egs%20%7B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Egu%20%7B%20color%3A%20%23800080%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Egt%20%7B%20color%3A%20%230044DD%20%7D%20%0A%2Ekc%20%7B%20color%3A%20%23008000%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Ekd%20%7B%20color%3A%20%23008000%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Ekn%20%7B%20color%3A%20%23008000%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Ekp%20%7B%20color%3A%20%23008000%20%7D%20%0A%2Ekr%20%7B%20color%3A%20%23008000%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Ekt%20%7B%20color%3A%20%23B00040%20%7D%20%0A%2Em%20%7B%20color%3A%20%23666666%20%7D%20%0A%2Es%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Ena%20%7B%20color%3A%20%237D9029%20%7D%20%0A%2Enb%20%7B%20color%3A%20%23008000%20%7D%20%0A%2Enc%20%7B%20color%3A%20%230000FF%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Eno%20%7B%20color%3A%20%23880000%20%7D%20%0A%2End%20%7B%20color%3A%20%23AA22FF%20%7D%20%0A%2Eni%20%7B%20color%3A%20%23999999%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Ene%20%7B%20color%3A%20%23D2413A%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Enf%20%7B%20color%3A%20%230000FF%20%7D%20%0A%2Enl%20%7B%20color%3A%20%23A0A000%20%7D%20%0A%2Enn%20%7B%20color%3A%20%230000FF%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Ent%20%7B%20color%3A%20%23008000%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Env%20%7B%20color%3A%20%2319177C%20%7D%20%0A%2Eow%20%7B%20color%3A%20%23AA22FF%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Ew%20%7B%20color%3A%20%23bbbbbb%20%7D%20%0A%2Emb%20%7B%20color%3A%20%23666666%20%7D%20%0A%2Emf%20%7B%20color%3A%20%23666666%20%7D%20%0A%2Emh%20%7B%20color%3A%20%23666666%20%7D%20%0A%2Emi%20%7B%20color%3A%20%23666666%20%7D%20%0A%2Emo%20%7B%20color%3A%20%23666666%20%7D%20%0A%2Esa%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Esb%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Esc%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Edl%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Esd%20%7B%20color%3A%20%23BA2121%3B%20font%2Dstyle%3A%20italic%20%7D%20%0A%2Es2%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Ese%20%7B%20color%3A%20%23BB6622%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Esh%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Esi%20%7B%20color%3A%20%23BB6688%3B%20font%2Dweight%3A%20bold%20%7D%20%0A%2Esx%20%7B%20color%3A%20%23008000%20%7D%20%0A%2Esr%20%7B%20color%3A%20%23BB6688%20%7D%20%0A%2Es1%20%7B%20color%3A%20%23BA2121%20%7D%20%0A%2Ess%20%7B%20color%3A%20%2319177C%20%7D%20%0A%2Ebp%20%7B%20color%3A%20%23008000%20%7D%20%0A%2Efm%20%7B%20color%3A%20%230000FF%20%7D%20%0A%2Evc%20%7B%20color%3A%20%2319177C%20%7D%20%0A%2Evg%20%7B%20color%3A%20%2319177C%20%7D%20%0A%2Evi%20%7B%20color%3A%20%2319177C%20%7D%20%0A%2Evm%20%7B%20color%3A%20%2319177C%20%7D%20%0A%2Eil%20%7B%20color%3A%20%23666666%20%7D%20%0A" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="header">
+<h1 class="title">ECS 150: Project #3 - User-level thread library (part 2)</h1>
+<h2 class="author">Joël Porquet</h2>
+<h3 class="date">UC Davis, Spring Quarter 2017, version 1</h3>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#changelog">Changelog</a></li>
+<li><a href="#general-information">General information</a></li>
+<li><a href="#specifications">Specifications</a><ul>
+<li><a href="#introduction">Introduction</a><ul>
+<li><a href="#constraints">Constraints</a></li>
+<li><a href="#skeleton-code">Skeleton code</a></li>
+</ul></li>
+<li><a href="#part-1-semaphore-api">Part 1: semaphore API</a><ul>
+<li><a href="#testing">Testing</a></li>
+</ul></li>
+<li><a href="#part-2-tps-api">Part 2: TPS API</a><ul>
+<li><a href="#phase-2.1-unprotected-tps-with-naive-cloning">Phase 2.1: Unprotected TPS with naive cloning</a></li>
+<li><a href="#phase-2.2-protected-tps">Phase 2.2: Protected TPS</a></li>
+<li><a href="#phase-2.3-copy-on-write-cloning">Phase 2.3: Copy-on-Write cloning</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#deliverable">Deliverable</a><ul>
+<li><a href="#content">Content</a></li>
+<li><a href="#git">Git</a></li>
+<li><a href="#handin">Handin</a></li>
+</ul></li>
+<li><a href="#academic-integrity">Academic integrity</a></li>
+</ul>
+</div>
+<h1 id="changelog">Changelog</h1>
+<ul>
+<li>v1: Fix sentence in cloning example</li>
+<li>v0: First publication</li>
+</ul>
+<h1 id="general-information">General information</h1>
+<p>Due before <strong>11:59 PM, Friday, May 19th, 2017</strong>.</p>
+<p>You will be working with a partner for this project. Remember, you cannot keep the same partner for more than 2 projects over the course of the quarter.</p>
+<p>The reference work environment is the CSIF.</p>
+<h1 id="specifications">Specifications</h1>
+<p><em>Note that the specifications for this project are subject to change at anytime for additional clarification. Make sure to always refer to the latest version.</em></p>
+<h2 id="introduction">Introduction</h2>
+<p>The goal of this project is to extend your understanding of threads, by implementing two independent parts:</p>
+<ol style="list-style-type: decimal">
+<li>Semaphores, for efficient thread synchronization by using waiting queues.</li>
+<li>Per-thread protected memory regions. Threads will be able to create their own private storage (a.k.a. TPS or Thread Private Storage), transparently accessible by an API and protected from other threads.</li>
+</ol>
+<p>Concerning the thread management, and in order for this project to be as independent as possible from the previous project, we will use the POSIX <code>pthreads</code> library.</p>
+<p>For both parts, you are welcome to re-use the queue API that you developed for project 2.</p>
+<h3 id="constraints">Constraints</h3>
+<p>Your library must be written in C, be compiled with GCC and only use the standard functions provided by the <a href="https://www.gnu.org/software/libc/manual/">GNU C Library</a> (aka <code>libc</code>). <em>All</em> the functions provided by the <code>libc</code> can be used, but your program cannot be linked to any other external libraries.</p>
+<p>Your source code should follow the relevant parts of the <a href="https://www.kernel.org/doc/html/latest/process/coding-style.html">Linux kernel coding style</a> and be properly commented.</p>
+<h3 id="skeleton-code">Skeleton code</h3>
+<p>The skeleton code that you are expected to complete is available in <code>/home/jporquet/ecs150/</code>. This code already defines most of the prototypes for the functions you must implement, as explained in the following sections.</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> /home/jporquet/ecs150/
+<span class="gp">$</span> tree
+<span class="go">.</span>
+<span class="go">├── libuthread</span>
+<span class="go">│   ├── Makefile*</span>
+<span class="go">│   ├── sem.c*</span>
+<span class="go">│   ├── sem.h</span>
+<span class="go">│   ├── thread.h</span>
+<span class="go">│   ├── thread.o</span>
+<span class="go">│   ├── tps.c*</span>
+<span class="go">│   └── tps.h</span>
+<span class="go">├── Makefile</span>
+<span class="go">├── sem_buffer.c</span>
+<span class="go">├── sem_count.c</span>
+<span class="go">├── sem_prime.c</span>
+<span class="go">└── tps.c</span>
+</pre></div>
+
+<p>The code is organized in two parts. At the root of the directory, there are a couple of test applications which make use of the thread library. You can compile these applications and run them.</p>
+<p>In the subdirectory <code>libuthread</code>, there are the files composing the thread library that you must complete. The files to complete are marked with a star (you should have <strong>no</strong> reason to touch any of the headers which are not marked with a star, even if you think you do...).</p>
+<h2 id="part-1-semaphore-api">Part 1: semaphore API</h2>
+<p>The interface of the semaphore API is defined in <code>libuthread/sem.h</code> and your implementation should go in <code>libuthread/sem.c</code>.</p>
+<p>Semaphores are a way to control the access to common resources by multiple threads. Internally, a semaphore has a certain count, that represent the number of threads able to share a common resource at the same time. This count is determined when initializing the semaphore for the first time.</p>
+<p>Threads can then ask to grab a resource (known as &quot;down&quot; or &quot;P&quot; operation) or release a resource (known as &quot;up&quot; or &quot;V&quot; operation).</p>
+<p>Trying to grab a resource when the count of a semaphore is down to 0 adds the requesting thread to the list of threads that are waiting for this resource. The thread is put in a blocked state and shouldn't be eligible to scheduling.</p>
+<p>When a thread releases a semaphore which count was 0, it checks whether some other threads were currently waiting on it. In such case, the first thread of the waiting list can be unblocked, and be eligible to run later.</p>
+<p>The semaphore implementation should make use of the functions defined in the thread API, as described in the <code>thread.h</code> header. The implementation of this API is provided to you already compiled, as an object file, in <code>thread.o</code>. You will probably need to slightly modify your Makefile to not try to recreate this object file when compiling, or remove it when cleaning.</p>
+<h3 id="testing">Testing</h3>
+<p>Three testing programs are available in order to test your semaphore implementation:</p>
+<ul>
+<li><code>sem_count</code>: simple test with two threads and two semaphores</li>
+<li><code>sem_buffer</code>: producer/consumer exchanging data in a buffer</li>
+<li><code>sem_primer</code>: prime sieve implemented with a growing pipeline of threads</li>
+</ul>
+<h2 id="part-2-tps-api">Part 2: TPS API</h2>
+<p>As you know, threads of a same process all share the same memory address space. In general, this is a great behavior because it allows threads to easily share information. However, it can also be an issue when, typically due to programming bugs, one thread accidentally modifies values that another thread was using. To protect data from being overwritten by other threads, it would be convenient for each thread to possess a protected storage area that only this thread could read from and write to. For this project, we call such memory area, <em>Thread Private Storage</em>.</p>
+<p>The goal of the TPS API is to provide a private and protected memory page (i.e. 4096 bytes) to each thread that requires it.</p>
+<p>The interface of the TPS API is defined in <code>libuthread/tps.h</code> and your implementation should go in <code>libuthread/tps.c</code>.</p>
+<p>Note that your TPS implementation should make use of the critical section helpers defined in the thread API, as described in the <code>thread.h</code> header, when manipulating shared variables.</p>
+<h3 id="phase-2.1-unprotected-tps-with-naive-cloning">Phase 2.1: Unprotected TPS with naive cloning</h3>
+<p>For this phase, you will need to implement a first version of the API. Below is a few indications to help you started.</p>
+<p>In <code>tps_init()</code>, you can initialize your API the way you want. Depending on your implementation, it is not necessary that this function contains any code at this point. But if you need some internal objects to be initialized before any TPS can be created, this function is where it should go. For this phase, you can ignore the parameter <code>segv</code>.</p>
+<p>In <code>tps_create()</code>, you must create a TPS for the thread that requires it. As you can notice, this function doesn't return any object. It means that the TPS object must be kept inside the library and shall not be exposed to the client. Each time the client will subsequently interact with its TPS, via <code>tps_read()</code> or <code>tps_write()</code>, it is up to the library to find the corresponding TPS and operate on it.</p>
+<blockquote>
+<p>Hint: you can identify client threads by getting their Thread ID with <code>pthread_self()</code>.</p>
+</blockquote>
+<p>The page of memory associated to a TPS should be allocated using the C library function <code>mmap()</code>. Because <code>mmap()</code> allocates memory at the granularity of pages, it will be possible in the next phase to protect these pages by setting no read/write permissions. <code>mmap()</code> is very versatile and you will need to study the documentation in order to understand how to allocate a memory page that is private and anonymous, and can be accessed in reading and writing.</p>
+<p>In <code>tps_clone()</code>, the calling thread is requesting its own TPS whose content must be a copy of the target thread's TPS. For this first phase, you can create a new memory page and simply copy the content from the target thread's TPS with <code>memcpy()</code>.</p>
+<p>Useful resources for this phase:</p>
+<ul>
+<li><a href="https://www.gnu.org/software/libc/manual/html_mono/libc.html#Memory_002dmapped-I_002fO" class="uri">https://www.gnu.org/software/libc/manual/html_mono/libc.html#Memory_002dmapped-I_002fO</a></li>
+</ul>
+<h4 id="testing-1">Testing</h4>
+<p>One simple testing program, <code>tps.c</code>, is available in order to test your first implementation.</p>
+<h3 id="phase-2.2-protected-tps">Phase 2.2: Protected TPS</h3>
+<p>In this phase, you need to modify the previous phase by adding TPS protection.</p>
+<p>In <code>tps_create()</code>, the memory page should have no read/write permission by default. It's only in <code>tps_read()</code> that the page should temporarily become readable, and in <code>tps_write()</code> that the page should temporarily become writable.</p>
+<p>At this stage, you might now encounter two types of segmentation faults. In addition to the usual programming errors (e.g. dereferencing a NULL pointer), accessing a protected TPS area will also cause a segmentation fault.</p>
+<p>A good way to distinguish between these two types of faults is to set up our own segmentation fault handler. Modify <code>tls_init()</code> in order to associate a function handler to the signals of type <code>SIGSEGV</code> and <code>SIGBUS</code>:</p>
+<div class="highlight"><pre><span></span><span class="kt">int</span> <span class="nf">tps_init</span><span class="p">(</span><span class="kt">int</span> <span class="n">segv</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="p">...</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">segv</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">sigaction</span> <span class="n">sa</span><span class="p">;</span>
+
+        <span class="n">sigemptyset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sa</span><span class="p">.</span><span class="n">sa_mask</span><span class="p">);</span>
+        <span class="n">sa</span><span class="p">.</span><span class="n">sa_flags</span> <span class="o">=</span> <span class="n">SA_SIGINFO</span><span class="p">;</span>
+        <span class="n">sa</span><span class="p">.</span><span class="n">sa_sigaction</span> <span class="o">=</span> <span class="n">segv_handler</span><span class="p">;</span>
+        <span class="n">sigaction</span><span class="p">(</span><span class="n">SIGBUS</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sa</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+        <span class="n">sigaction</span><span class="p">(</span><span class="n">SIGSEGV</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sa</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Write the signal handler that will distinguish between real segmentation faults and TPS protection faults. Here is a skeleton that needs to be completed:</p>
+<div class="highlight"><pre><span></span><span class="k">static</span> <span class="kt">void</span> <span class="nf">segv_handler</span><span class="p">(</span><span class="kt">int</span> <span class="n">sig</span><span class="p">,</span> <span class="kt">siginfo_t</span> <span class="o">*</span><span class="n">si</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">context</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="cm">/*</span>
+<span class="cm">     * Get the address corresponding to the beginning of the page where the</span>
+<span class="cm">     * fault occurred</span>
+<span class="cm">     */</span>
+    <span class="kt">void</span> <span class="o">*</span><span class="n">p_fault</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)((</span><span class="kt">uintptr_t</span><span class="p">)</span><span class="n">si</span><span class="o">-&gt;</span><span class="n">si_addr</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="n">TPS_SIZE</span> <span class="o">-</span> <span class="mi">1</span><span class="p">));</span>
+
+    <span class="cm">/*</span>
+<span class="cm">     * Iterate through all the TPS areas and find if p_fault matches one of them</span>
+<span class="cm">     */</span>
+    <span class="p">...</span>
+    <span class="k">if</span> <span class="p">(</span><span class="cm">/* There is a match */</span><span class="p">)</span>
+        <span class="cm">/* Printf the following error message */</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;TPS protection error!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+    <span class="cm">/* In any case, restore the default signal handlers */</span>
+    <span class="n">signal</span><span class="p">(</span><span class="n">SIGSEGV</span><span class="p">,</span> <span class="n">SIG_DFL</span><span class="p">);</span>
+    <span class="n">signal</span><span class="p">(</span><span class="n">SIGBUS</span><span class="p">,</span> <span class="n">SIG_DFL</span><span class="p">);</span>
+    <span class="cm">/* And transmit the signal again in order to cause the program to crash */</span>
+    <span class="n">raise</span><span class="p">(</span><span class="n">sig</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Useful resources for this phase:</p>
+<ul>
+<li><a href="https://linux.die.net/man/2/mprotect" class="uri">https://linux.die.net/man/2/mprotect</a></li>
+<li><a href="http://pubs.opengroup.org/onlinepubs/7908799/xsh/sigaction.html" class="uri">http://pubs.opengroup.org/onlinepubs/7908799/xsh/sigaction.html</a></li>
+</ul>
+<h3 id="phase-2.3-copy-on-write-cloning">Phase 2.3: Copy-on-Write cloning</h3>
+<p>With the naive cloning strategy adopted so far, the memory page of the target thread is directly copied when being cloned. But assuming that the new TPS won't be modified right away, it would be possible to delay this copy operation as long as the shared memory page is only read from by either one of the threads sharing it. This approach is called CoW (Copy-on-Write), which saves memory space and avoid unnecessary copy operations until required.</p>
+<p>The cloning operation should therefore only create a TLS object that refers to the same page. And it's only when one of the threads sharing the same page actually calls <code>tls_write()</code> that a new page is created and the content is copied from the original memory page.</p>
+<div class="highlight"><pre><span></span>- After Thread 2 clones Thread 1's TPS:
+
++----------+       +-------+       +----------------+       +--------------+
+| Thread 1 | +---&gt; | TLS 1 | +---&gt; | Page address X | +---&gt; | Hello world! |
++----------+       +-------+       +----------------+       |              |
+                             +-----^                        | Other content|
+                             |                              | ...          |
++----------+       +-------+ |                              |              |
+| Thread 2 | +---&gt; | TLS 2 | +                              |              |
++----------+       +-------+                                |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            +--------------+
+
+- After Thread 2 writes to its TPS and causes a Copy-on-Write:
+
++----------+       +-------+       +----------------+       +--------------+
+| Thread 1 | +---&gt; | TLS 1 | +---&gt; | Page address X | +---&gt; | Hello world! |
++----------+       +-------+       +----------------+       |              |
+                                                            | Other content|
+                                                            | ...          |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            +--------------+
+
++----------+       +-------+       +----------------+       +--------------+
+| Thread 2 | +---&gt; | TLS 2 | +---&gt; | Page address Y | +---&gt; | Hello davis! |
++----------+       +-------+       +----------------+       |              |
+                                                            | Other content|
+                                                            | ...          |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            |              |
+                                                            +--------------+
+</pre></div>
+
+<p>In order to implement such cloning strategy, you will need to perform a few modifications to your existing implementation:</p>
+<ol style="list-style-type: decimal">
+<li>You need to dissociate the TLS object from the memory page. Before you probably had the address of the TLS's memory page as part of the TLS object, now you need an extra level of indirection. You need a page structure containing the memory page's address, and TLS can only point to such page structures. This way, two or more TLSes can point to the same page structure. Then, in order to keep track of how many TLSes are currently &quot;sharing&quot; the same memory page, the struct page must also contain a reference counter.</li>
+<li>In <code>tls_clone()</code>, you need to allocate a new TLS object for the calling thread, but have the page structure be shared with the target thread and the reference counter updated accordingly.</li>
+<li>In <code>tls_write()</code>, writing to a page that has a reference count superior to 1 should causes a new memory page to be created first. This memory page should be the identical copy of the original one, and should now become the private copy of the calling thread, while the original page's reference counter should be decremented. Also, protection just be properly adjusted for both pages: the original page should become protected, while the new page should become temporarily writable during the ongoing writing operation.</li>
+</ol>
+<h1 id="deliverable">Deliverable</h1>
+<h2 id="content">Content</h2>
+<p>Your submission should contain, besides your source code, the following files:</p>
+<ul>
+<li><p><code>AUTHORS</code>: first name, last name, student ID, CSIF username and email of each partner, one entry per line formatted in CSV (fields are separated with commas). For example:</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> cat AUTHORS
+<span class="go">Homer,Simpson,00010001,simpson32,hsimpson@ucdavis.edu</span>
+<span class="go">Robert David,Martin,00010002,rdm,rdmartin@ucdavis.edu</span>
+</pre></div>
+</li>
+<li><p><code>REPORT.md</code>: a description of your submission. Your report must respect the following rules:</p>
+<ul>
+<li><p>It must be formatted in markdown language as described in this <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">Markdown-Cheatsheet</a>.</p></li>
+<li><p>It should contain no more than 300 lines and the maximum width for each line should be 80 characters (check your editor's settings to configure that).</p></li>
+<li><p>It should explain your high-level design choices, details about the relevant parts of your implementation, how you tested your project, the sources that you may have used to complete this project, and any other information that can help understanding your code.</p></li>
+<li><p>Keep in mind that the goal of this report is not to paraphrase the assignment, but to explain how you implemented it.</p></li>
+</ul></li>
+<li><p><code>libuthread/Makefile</code>: a Makefile that compiles your source code without any errors or warnings (on the CSIF computers), and builds a static library named <code>libuthread.a</code>.</p>
+<p>The compiler should be run with the options <code>-Wall -Werror</code>.</p>
+<p>There should also be a <code>clean</code> rule that removes generated files and puts the directory back in its original state.</p></li>
+</ul>
+<p>Your submission should be empty of any clutter files such as executable files, core dumps, etc.</p>
+<h2 id="git">Git</h2>
+<p>Your submission must be under the shape of a Git bundle. In your git repository, type in the following command (your work must be in the branch <code>master</code>):</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> git bundle create synctps.bundle master
+</pre></div>
+
+<p>It should create the file <code>synctps.bundle</code> that you will submit via <code>handin</code>.</p>
+<p>You can make sure that your bundle has properly been packaged by extracting it in another directory and verifying the log:</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> /path/to/tmp/dir
+<span class="gp">$</span> git clone /path/to/synctps.bundle -b master synctps
+<span class="gp">$</span> <span class="nb">cd</span> synctps
+<span class="gp">$</span> ls -l
+<span class="go">...</span>
+<span class="gp">$</span> git log
+<span class="go">...</span>
+</pre></div>
+
+<h2 id="handin">Handin</h2>
+<p>Your Git bundle, as created above, is to be submitted with <code>handin</code> from one of the CSIF computers:</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> handin cs150 p3 synctps.bundle
+<span class="go">Submitting synctps.bundle... ok</span>
+<span class="gp">$</span>
+</pre></div>
+
+<p>You can verify that the bundle has been properly submitted:</p>
+<div class="highlight"><pre><span></span><span class="gp">$</span> handin cs150 p3
+<span class="go">The following input files have been received:</span>
+<span class="go">...</span>
+<span class="gp">$</span>
+</pre></div>
+
+<h1 id="academic-integrity">Academic integrity</h1>
+<p>You are expected to write this project from scratch, thus avoiding to use any existing source code available on the Internet. You must specify in your <code>REPORT.md</code> file any sources of code that you or your partner have viewed to help you complete this project. All class projects will be submitted to MOSS to determine if pairs of students have excessively collaborated with other pairs, or have used the work of past students.</p>
+<p>Excessive collaboration, or failure to list external code sources will result in the matter being transferred to Student Judicial Affairs.</p>
+</body>
+</html>
